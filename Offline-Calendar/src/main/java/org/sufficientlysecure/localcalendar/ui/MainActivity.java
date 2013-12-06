@@ -19,8 +19,11 @@
 package org.sufficientlysecure.localcalendar.ui;
 
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 
+import org.sufficientlysecure.localcalendar.CalendarController;
 import org.sufficientlysecure.localcalendar.R;
 import org.sufficientlysecure.localcalendar.util.InstallLocationHelper;
 
@@ -35,34 +38,27 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.TextView;
 
+import static org.sufficientlysecure.localcalendar.CalendarController.addCalendar;
+
 public class MainActivity extends FragmentActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
 
-        /**
-         * Offline Calendar must be install on internal location!
-         *
-         * from bug report (https://github.com/dschuermann/offline-calendar/issues/19):
-         * I am using S2E, which extends phone disk space by putting apps to the SD card.
-         * The SD card is mounted quite late during the boot process,
-         * but Android needs sync adapters earlier at boot time to be able to use them.
-         * As a result, sync adapters like the offline calendar seemed to disappear during boot,
-         * although Android is simply not able to load it soon enough.
-         */
-        if (InstallLocationHelper.isInstalledOnSdCard(this)) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setMessage(R.string.main_activity_sd_card_error).setCancelable(false)
-                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            finish();
-                        }
-                    });
-            AlertDialog alert = builder.create();
-            alert.show();
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean firstRun = sp.getBoolean("first", true);
+        if (firstRun){
+            SharedPreferences.Editor editor = sp.edit();
+            editor.putBoolean("first", false);
+            editor.commit();
+
+            // Add a default calendar
+            addCalendar(this, "default", 0, getContentResolver());
         }
+
+        // Exit the application
+        System.exit(1);
     }
 
     @Override
